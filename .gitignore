@@ -1,0 +1,52 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+.terraform.lock.hcl
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Backstage
+backstage/node_modules/
+backstage/dist/
+backstage/dist-types/
+backstage/.cache/
+backstage/coverage/
+backstage/*.local.yaml
+
+# Environment files
+.env
+.env.local
+*.env
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker
+docker-compose.override.yml
+
+# Credentials
+credentials.json
+*-credentials.json
+*.pem
+*.key
+service-account*.json

@@ -1,0 +1,171 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: gcp-project-template
+  title: Create GCP Project
+  description: Create a new GCP project with standard configuration
+  tags:
+    - gcp
+    - infrastructure
+    - terraform
+spec:
+  owner: platform-team
+  type: infrastructure
+
+  parameters:
+    - title: Project Information
+      required:
+        - projectName
+        - projectId
+        - environment
+      properties:
+        projectName:
+          title: Project Name
+          type: string
+          description: Display name for the GCP project
+          ui:autofocus: true
+          ui:help: A human-readable name for your project
+        projectId:
+          title: Project ID
+          type: string
+          description: Unique identifier for the project (6-30 chars, lowercase, numbers, hyphens)
+          pattern: '^[a-z][a-z0-9-]{4,28}[a-z0-9]$'
+          ui:help: Must be globally unique across all of GCP
+        environment:
+          title: Environment
+          type: string
+          description: Environment type
+          enum:
+            - dev
+            - staging
+            - prod
+          default: dev
+
+    - title: Network Configuration
+      properties:
+        createVpc:
+          title: Create VPC Network
+          type: boolean
+          description: Create a custom VPC network for this project
+          default: false
+        createNat:
+          title: Create Cloud NAT
+          type: boolean
+          description: Enable Cloud NAT for private instances (requires VPC)
+          default: false
+        defaultRegion:
+          title: Default Region
+          type: string
+          description: Primary region for resources
+          enum:
+            - us-central1
+            - us-east1
+            - us-west1
+            - europe-west1
+            - asia-southeast1
+          default: us-central1
+
+    - title: Additional Configuration
+      properties:
+        enabledApis:
+          title: APIs to Enable
+          type: array
+          description: Google Cloud APIs to enable
+          ui:widget: checkboxes
+          items:
+            type: string
+            enum:
+              - compute.googleapis.com
+              - container.googleapis.com
+              - storage-api.googleapis.com
+              - cloudfunctions.googleapis.com
+              - cloudrun.googleapis.com
+              - sqladmin.googleapis.com
+          default:
+            - compute.googleapis.com
+            - storage-api.googleapis.com
+        labels:
+          title: Labels
+          type: object
+          description: Key-value labels for the project
+          additionalProperties:
+            type: string
+          ui:help: 'Example: team=platform, cost_center=engineering'
+
+    - title: Repository Settings
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+
+  steps:
+    - id: fetch-base
+      name: Fetch Terraform Template
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          projectName: ${{ parameters.projectName }}
+          projectId: ${{ parameters.projectId }}
+          environment: ${{ parameters.environment }}
+          createVpc: ${{ parameters.createVpc }}
+          createNat: ${{ parameters.createNat }}
+          defaultRegion: ${{ parameters.defaultRegion }}
+          enabledApis: ${{ parameters.enabledApis }}
+          labels: ${{ parameters.labels }}
+          destination: ${{ parameters.repoUrl | parseRepoUrl }}
+
+    - id: publish
+      name: Publish to GitHub
+      action: publish:github
+      input:
+        allowedHosts: ['github.com']
+        description: Terraform configuration for GCP project ${{ parameters.projectName }}
+        repoUrl: ${{ parameters.repoUrl }}
+        defaultBranch: main
+        repoVisibility: private
+
+    - id: create-pr
+      name: Create Pull Request
+      action: publish:github:pull-request
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        branchName: initial-setup
+        title: 'Initial Terraform configuration for ${{ parameters.projectName }}'
+        description: |
+          # GCP Project Setup
+
+          This PR contains the Terraform configuration for creating:
+          - **Project ID**: ${{ parameters.projectId }}
+          - **Environment**: ${{ parameters.environment }}
+          - **VPC Network**: ${{ parameters.createVpc }}
+          - **Cloud NAT**: ${{ parameters.createNat }}
+
+          ## Next Steps
+          1. Review the Terraform configuration
+          2. Update `terraform.tfvars` with your GCP organization/folder ID and billing account
+          3. Merge this PR
+          4. The GitHub Action will run and create the project
+
+    - id: register
+      name: Register in Catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps.publish.output.remoteUrl }}
+      - title: Pull Request
+        url: ${{ steps.create-pr.output.remoteUrl }}
+      - title: Open in Catalog
+        icon: catalog
+        entityRef: ${{ steps.register.output.entityRef }}

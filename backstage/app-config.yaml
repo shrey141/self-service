@@ -1,0 +1,72 @@
+app:
+  title: Self-Service Platform
+  baseUrl: http://localhost:3000
+
+organization:
+  name: My Organization
+
+backend:
+  baseUrl: http://localhost:7007
+  listen:
+    port: 7007
+    host: 0.0.0.0
+  csp:
+    connect-src: ["'self'", 'http:', 'https:']
+  cors:
+    origin: http://localhost:3000
+    methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+    credentials: true
+  database:
+    client: pg
+    connection:
+      host: ${POSTGRES_HOST}
+      port: ${POSTGRES_PORT}
+      user: ${POSTGRES_USER}
+      password: ${POSTGRES_PASSWORD}
+      database: ${POSTGRES_DB}
+
+integrations:
+  github:
+    - host: github.com
+      # Generate a personal access token at https://github.com/settings/tokens
+      # Required scopes: repo, workflow
+      # token: ${GITHUB_TOKEN}
+
+techdocs:
+  builder: 'local'
+  generator:
+    runIn: 'local'
+  publisher:
+    type: 'local'
+
+auth:
+  environment: development
+  providers:
+    guest:
+      dangerouslyAllowOutsideDevelopment: true
+
+scaffolder:
+  # Use to customize the default commit author info
+  defaultAuthor:
+    name: Backstage Scaffolder
+    email: scaffolder@backstage.io
+  defaultCommitMessage: 'Initial commit from scaffolder'
+
+catalog:
+  import:
+    entityFilename: catalog-info.yaml
+    pullRequestBranchName: backstage-integration
+  rules:
+    - allow: [Component, System, API, Resource, Location, Template]
+  locations:
+    # Local example templates
+    - type: file
+      target: ../../templates/gcp-project/template.yaml
+      rules:
+        - allow: [Template]
+
+    # Example organizational data
+    - type: file
+      target: ../../catalog/entities.yaml
+      rules:
+        - allow: [Component, System, API, Resource, Location]
