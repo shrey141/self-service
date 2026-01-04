@@ -67,36 +67,85 @@ else
 fi
 
 echo ""
-echo "Starting Backstage services..."
+echo "=================================="
+echo "Backstage Setup Options"
+echo "=================================="
 echo ""
+echo "Backstage needs to be built before it can run."
+echo "You have two options:"
+echo ""
+echo "1. Build with Docker (takes 10-20 min, good for server)"
+echo "2. Run with Node.js (takes ~5 min, good for learning)"
+echo ""
+read -p "Choose option (1 or 2): " option
 
-# Start Docker Compose
-if docker compose version &> /dev/null; then
-    docker compose up -d
+if [ "$option" = "1" ]; then
+    echo ""
+    echo "Building Backstage with Docker..."
+    echo "This will take 10-20 minutes on first build."
+    echo "You can monitor progress in another terminal with:"
+    echo "  docker-compose logs -f backstage"
+    echo ""
+    read -p "Continue? (y/n): " confirm
+    if [[ "$confirm" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+        if docker compose version &> /dev/null; then
+            docker compose build
+            docker compose up -d
+        else
+            docker-compose build
+            docker-compose up -d
+        fi
+        echo ""
+        echo "✓ Backstage is building/starting"
+        echo ""
+        echo "Access Backstage at:"
+        echo "  - http://localhost:3000"
+        echo "  - http://$(hostname -I | awk '{print $1}'):3000"
+        echo ""
+        echo "Monitor the build:"
+        echo "  cd backstage && docker-compose logs -f backstage"
+    else
+        echo "Setup cancelled. You can run this script again anytime."
+    fi
+
+elif [ "$option" = "2" ]; then
+    if ! command -v node &> /dev/null; then
+        echo ""
+        echo "Node.js is not installed."
+        echo ""
+        echo "Install Node.js 18+ with:"
+        echo "  curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -"
+        echo "  sudo apt-get install -y nodejs"
+        echo ""
+        echo "Then run: cd backstage && ./run-local.sh"
+        exit 1
+    fi
+
+    echo ""
+    echo "Starting Backstage with Node.js..."
+    echo "This will create a Backstage app and run it locally."
+    echo ""
+    cd backstage
+    ./run-local.sh
+
 else
-    docker-compose up -d
+    echo ""
+    echo "Invalid option. Please run the script again and choose 1 or 2."
+    echo ""
+    echo "For more information, see:"
+    echo "  - backstage/DOCKER_BUILD.md"
+    echo "  - SETUP_ISSUE.md"
+    exit 1
 fi
 
 echo ""
 echo "=================================="
-echo "Setup Complete!"
+echo "Next Steps"
 echo "=================================="
 echo ""
-echo "Backstage is starting up. This may take a few minutes."
-echo ""
-echo "Access Backstage at:"
-echo "  - http://localhost:3000"
-echo "  - http://$(hostname -I | awk '{print $1}'):3000"
-echo ""
-echo "To check the status:"
-echo "  cd backstage && docker-compose ps"
-echo ""
-echo "To view logs:"
-echo "  cd backstage && docker-compose logs -f backstage"
-echo ""
-echo "Next steps:"
-echo "1. Wait for services to be healthy"
+echo "1. Wait for Backstage to start (may take a few minutes)"
 echo "2. Open Backstage in your browser"
-echo "3. Review the documentation in docs/"
-echo "4. Set up GCP OIDC (see docs/GCP_SETUP.md)"
+echo "3. Click 'Guest' to sign in (development mode)"
+echo "4. Review the documentation in docs/"
+echo "5. Set up GCP OIDC when ready (see docs/GCP_SETUP.md)"
 echo ""

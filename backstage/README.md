@@ -1,19 +1,41 @@
 # Backstage Setup
 
-## Quick Start
+## Important Note
 
-1. Copy the environment file and configure:
-   ```bash
-   cp .env.example .env
-   # Edit .env and add your GitHub token
-   ```
+Backstage doesn't provide a pre-built Docker image. You need to either:
+1. **Build it with Docker** (takes 10-20 min on first build)
+2. **Run locally with Node.js** (faster, recommended for learning)
 
-2. Start the services:
-   ```bash
-   docker-compose up -d
-   ```
+See [DOCKER_BUILD.md](./DOCKER_BUILD.md) for detailed instructions.
 
-3. Access Backstage at http://localhost:3000
+## Quick Start Options
+
+### Option 1: Build with Docker (Server Deployment)
+
+```bash
+# Copy environment file
+cp .env.example .env
+
+# Build and start (first time takes 10-20 minutes)
+docker-compose build
+docker-compose up -d
+
+# Monitor the build
+docker-compose logs -f backstage
+```
+
+### Option 2: Run Locally with Node.js (Recommended)
+
+```bash
+# Run the local setup script
+./run-local.sh
+```
+
+This will:
+- Check for Node.js 18+
+- Create a Backstage app
+- Start PostgreSQL in Docker
+- Run Backstage locally at http://localhost:3000
 
 ## Configuration
 
